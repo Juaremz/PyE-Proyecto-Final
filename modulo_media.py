@@ -1,55 +1,92 @@
 from scipy import stats
+import math 
+from leer_dataset_md import obtener_desviacion_dataset
 
-#Inicialización a nulo de las varables a utilizar 
+#Inicialización a nulo de las variables globales a utilizar 
 porcentaje_confianza_esperado = 0.0000
 desviacion_estandar_esperada = 0.0000
 margen_error_esperado = 0.0000
 
-def solicitud_datos_usuario(): 
+# ========== Solicitud de datos ==========
+def solicitud_datos_usuario(seleccion_usuario): 
     global porcentaje_confianza_esperado,desviacion_estandar_esperada, margen_error_esperado
-    #entrada para el nivel de confianza 
-    while True: 
-        porcentaje_confianza_esperado = input("\t¿Que nivel de confianza quieres que tenga el experimento? \033[96m(Ej: 87%)\033[0m\n\t\tR:")
-        
-        
-        if porcentaje_confianza_esperado.find("%") == -1: 
-            print("\tEl valor tiene que ser un porcentaje") 
-            
-        else: 
-            porcentaje_confianza_esperado=porcentaje_confianza_esperado.strip("%")
-            break; 
+    print()
 
-   #desviacion estandar esperada / S estimada
-    while True:  
-        desviacion_estandar_esperada = input("\t¿Que tan alejados deseas que esten los datos de la media? \033[96m(Ej: 23)\033[0m\n\t\tR:")
-        if desviacion_estandar_esperada.isalpha(): 
-            print("\tEl valor tiene que ser un numero") 
-        elif desviacion_estandar_esperada.isalpha() != True: 
-            break; 
-  
-    #margen E
-    while True:  
-        margen_error_esperado = input("\t¿Que margen de error esperas? \033[96m(Ej: 5)\033[0m\n\t\tR:")
-        if margen_error_esperado.isalpha(): 
-            print("\tEl valor tiene que ser un numero") 
-        elif margen_error_esperado.isalpha() != True: 
-            break; 
+    while True: 
+        if seleccion_usuario == 1: 
+            #entrada para el nivel de confianza 
+            while True: 
+                porcentaje_confianza_esperado = input("¿Que nivel de confianza quieres que tenga el experimento? \033[96m(Ej: 87%)\033[0m\n\tR:")
+                if porcentaje_confianza_esperado.find("%") == -1: 
+                    print("\tEl valor tiene que ser un porcentaje") 
+                    
+                else: 
+                    porcentaje_confianza_esperado=porcentaje_confianza_esperado.strip("%")
+                    break 
+            
+            #entrada para desviacion estandar esperada / S estimada
+            while True:  
+                desviacion_estandar_esperada = input("¿Que tan alejados deseas que esten los datos de la media? \033[96m(Ej: 23)\033[0m\n\tR:")
+                if desviacion_estandar_esperada.isalpha(): 
+                    print("\tEl valor tiene que ser un número") 
+                elif desviacion_estandar_esperada.isalpha() != True: 
+                    break 
+        
+            #entrada para margen E
+            while True:  
+                margen_error_esperado = input("¿Que margen de error esperas? \033[96m(Ej: 5)\033[0m\n\tR:")
+                if int(margen_error_esperado) == 0: 
+                    print("El valor tiene que ser mayor a cero")
+                elif margen_error_esperado.isalpha(): 
+                    print("\tEl valor tiene que ser un número") 
+                elif margen_error_esperado.isalpha() != True: 
+                    break
+                
+            break
+            
+        elif seleccion_usuario == 2: 
+            #entrada para el nivel de confianza 
+            while True: 
+                porcentaje_confianza_esperado = input("¿Que nivel de confianza quieres que tenga el experimento? \033[96m(Ej: 87%)\033[0m\n\tR:")
+                if porcentaje_confianza_esperado.find("%") == -1: 
+                    print("\tEl valor tiene que ser un porcentaje") 
+                    
+                else: 
+                    porcentaje_confianza_esperado=porcentaje_confianza_esperado.strip("%")
+                    break 
+            
+            #entrada para margen E
+            while True:  
+                margen_error_esperado = input("¿Que margen de error esperas? \033[96m(Ej: 5)\033[0m\n\tR:")
+                if int(margen_error_esperado) == 0: 
+                    print("El valor tiene que ser mayor a cero")
+                elif margen_error_esperado.isalpha(): 
+                    print("\tEl valor tiene que ser un número") 
+                elif margen_error_esperado.isalpha() != True: 
+                    break
+
+            #se obtiene la desv_est del dataset
+            desviacion_estandar_esperada = obtener_desviacion_dataset()
+            break 
+        else: 
+            print("Intente de nuevo")
 
 def conversion_porcentaje_decimal(num): 
     num = int(num)/100
     return num 
 
-#calculo de α o nivel de significancia (area de las colas)
+# ========== Calculo de α o nivel de significancia (area de las colas) ==========
 def calculo_significancia(num): 
     num = 1 - float(num)
     num = num/2         #al considerar la distribucion simetrica, consideramos α/2
-    
     return num
 
+# ========== Calculo de la funcion inversa normal ==========
 def calculo_funcioninv_dis_normal(): 
     proba_acumulada = 1 - calculo_significancia(conversion_porcentaje_decimal(porcentaje_confianza_esperado))
     z = stats.norm.ppf(proba_acumulada)      #calculo de la inversa normal 
     return z
+
 
 def calculo_n(): 
     global desviacion_estandar_esperada, margen_error_esperado
@@ -59,19 +96,32 @@ def calculo_n():
     z = float(calculo_funcioninv_dis_normal())
     
     n = ((z*desviacion_estandar_esperada)/margen_error_esperado)**2
-    print(f"\t\t   \033[32mEl tamaño de muestra necesario será de: {round(n)}\033[0m")
+    print(f"\033[32mEl tamaño de muestra necesario será de: {math.ceil(n)}\033[0m")
+
 
 def main(): 
-    print("\t\t\033[36m┌─────────────────────────────────────────────┐")
-    print("\t\t│  MÓDULO PARA SABER EL TAMAÑO DE TU MUESTRA  │")
-    print("\t\t└─────────────────────────────────────────────┘\033[0m")
-    solicitud_datos_usuario()
-    print("\t\t\t┌────────────────────────────────┐")
-    print("\t\t\t│        \033[36mFórmula utilizada\033[0m       │")
-    print("\t\t\t├────────────────────────────────┤")
-    print("\t\t\t│        \033[33mn = (Z · σ / E)²\033[0m        │")
-    print("\t\t\t└────────────────────────────────┘")
-    calculo_n()
+    print("\033[36m┌─────────────────────────────────────────────┐")
+    print("│  MÓDULO PARA SABER EL TAMAÑO DE TU MUESTRA  │")
+    print("└─────────────────────────────────────────────┘\033[0m")
+
+    
+    while True: 
+        try:
+            print("Deseas...") 
+            seleccion_usuario = input(" 1. Usar datos propios\n 2. Utilizar un dataset precargado\n R:")
+            solicitud_datos_usuario(int(seleccion_usuario))
+
+            print("┌────────────────────────────────┐")
+            print("│        \033[36mFórmula utilizada\033[0m       │")
+            print("├────────────────────────────────┤")
+            print("│        \033[33mn = (Z · σ / E)²\033[0m        │")
+            print("└────────────────────────────────┘")
+            calculo_n()
+            break
+        except Exception : 
+            print("Ocurrió un error")
+
+
     
     
 
