@@ -1,0 +1,182 @@
+.header-section {
+    text-align: center;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: white;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+        
+.header-section h1 {
+    margin: 0;
+    font-size: 2.2rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #ffffff;      
+    font-weight: 800;    
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3); 
+}
+
+.header-section p {
+    margin-top: 10px;
+    color: #ecf0f1;      
+    font-weight: 600;    
+    opacity: 1;          
+}
+
+.formula-container {
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    margin: 20px 0;
+    border: 1px solid #e0e0e0;
+}
+
+:root {
+    --primary: #2c3e50;
+    --accent: #3498db;
+    --bg: #f4f7f6;
+    --white: #ffffff;
+    --success: #27ae60;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg);
+    color: var(--primary);
+    line-height: 1.6;
+    margin: 0;
+    padding: 40px;
+}
+
+h1 {
+    text-align: center;
+    color: var(--primary);
+    font-weight: 300;
+    margin-bottom: 40px;
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 10px;
+}
+
+.container {
+    max-width: 1000px;
+    margin: auto;
+}
+
+#reporteContenedor{
+    background-color: #ffffff;
+    padding: 10px;
+}
+
+.card {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    margin-bottom: 25px;
+}
+
+.grid-inputs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    align-items: end;
+}
+
+label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+select, input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 1rem;
+}
+
+.btn-group {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin: 30px 0;
+}
+
+button {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s;
+    font-size: 1rem;
+}
+
+.btn-calc, .btn-pdf {
+    /* Estilo de texto */
+    color: #ffffff !important;    
+    font-weight: 800;             
+    text-transform: uppercase;    
+    letter-spacing: 1px;          
+    
+    /* Efecto visual */
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+}
+
+.btn-calc {
+    background-color: #27ae60; 
+}
+
+.btn-pdf {
+    background-color: #e67e22;
+}
+
+/* Efecto al pasar el ratón (Hover) */
+.btn-calc:hover, .btn-pdf:hover {
+    transform: translateY(-2px);   /* Se eleva un poco */
+    box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+    filter: brightness(1.1);       /* Se aclara ligeramente */
+}
+
+.results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.stat-box {
+    text-align: center;
+    padding: 20px;
+    background: #ebf5fb;
+    border-radius: 8px;
+    border: 1px solid #d6eaf8;
+}
+
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: var(--accent);
+    display: block;
+}
+
+.resumen-container {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+:root {
+    --success: #27ae60;
+}

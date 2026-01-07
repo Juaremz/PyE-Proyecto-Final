@@ -125,5 +125,20 @@ def main():
     
     
 
+if __name__ == "__main__":
+    main()
 
-main()
+
+def calcular_n_web(confianza, desviacion, error):
+    global porcentaje_confianza_esperado
+    global desviacion_estandar_esperada
+    global margen_error_esperado
+
+    porcentaje_confianza_esperado = confianza
+    desviacion_estandar_esperada = desviacion
+    margen_error_esperado = error
+
+    z = calculo_funcioninv_dis_normal()
+    n = ((z * float(desviacion)) / float(error))**2
+
+    return math.ceil(n)

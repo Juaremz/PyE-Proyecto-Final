@@ -62,3 +62,16 @@ def obtener_desviacion_dataset():
     
     return desviacion_columna_seleccionada
 
+
+def obtener_desviacion_dataset_web(nombre_csv, columna):
+    ruta = f"dataset/Blood_Donor_Registry_Dataset/data/{nombre_csv}"
+    df = pd.read_csv(ruta)
+
+    if columna not in df.columns:
+        raise ValueError("Columna no válida")
+
+    return {
+        "sigma": float(df[columna].std()),
+        "media": float(df[columna].mean()),
+        "mediana": float(df[columna].median())
+    }
