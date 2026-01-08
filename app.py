@@ -85,5 +85,10 @@ def obtener_estadisticos(dataset, columna):
         "mediana": float(df[columna].median()) 
     })
 
+@app.route("/muestreo/proporciones")
+def muestreo_proporciones():
+    return render_template("proporciones.html")
+
+
 if __name__ == "__main__":
     app.run(debug=True)

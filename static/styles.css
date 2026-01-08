@@ -1,3 +1,4 @@
+
 .header-section {
     text-align: center;
     padding: 40px 20px;
@@ -179,4 +180,14 @@ button {
 
 :root {
     --success: #27ae60;
+}
+
+.alert-error {
+    background: #ffe6e6;
+    color: #a40000;
+    border: 1px solid #e0b4b4;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin: 15px 0;
+    font-weight: 500;
 }

@@ -1,135 +1,167 @@
-// --- FUNCIONES DE UTILIDAD ---
+//  GRÁFICAS GLOBALES 
+window.chartError = window.chartError || null;
+window.chartConf = window.chartConf || null;
 
-// Calcula Z para cualquier nivel de confianza
-function calcularZ(confianza) {
-    const tablaValoresZ = { "90": 1.645, "95": 1.96, "99": 2.576 };
-    if (tablaValoresZ[confianza.toString()]) return tablaValoresZ[confianza.toString()];
+/***********************************************************
+ * PROPORCIONES – ESTIMACIÓN DE TAMAÑO DE MUESTRA
+ ***********************************************************/
+function calcularProporcion() {
 
-    const p = 1 - (1 - confianza / 100) / 2;
-    const t = Math.sqrt(-2 * Math.log(1 - p));
-    const c0 = 2.30753, c1 = 0.27061, d1 = 0.99229, d2 = 0.04481;
-    const zCalculado = t - (c0 + c1 * t) / (1 + d1 * t + d2 * t * t);
-    return parseFloat(zCalculado.toFixed(3));
-}
+    limpiarError();
+    document.getElementById("cardConclusion").style.display = "none";
 
-// Variables globales para las gráficas (para poder destruirlas antes de crear nuevas)
-let chartError = null;
-let chartConfianza = null;
-
-// --- FUNCIÓN PRINCIPAL DE CÁLCULO ---
-
-async function calcular() {
-    let sigma, confianzaInput, error, n, media, cv, mediana;
-    const modo = document.getElementById("tipoDatos").value;
-    
-    try {
-        // 1. OBTENCIÓN DE DATOS SEGÚN MODO
-        if (modo === "propios") {
-            sigma = parseFloat(document.getElementById("stdInput").value);
-            confianzaInput = document.getElementById("confianzaPropios").value;
-            error = parseFloat(document.getElementById("errorPropios").value);
-            media = null; 
-        } 
-        else if (modo === "dataset") {
-            const ds = document.getElementById("datasetSelect").value;
-            const col = document.getElementById("columnaSelect").value;
-            if (!ds || !col) throw new Error("Selecciona Dataset y Columna");
-
-            const res = await fetch(`/estadisticos/${ds}/${col}`);
-            const data = await res.json();
-            sigma = data.sigma; media = data.media; mediana = data.mediana;
-            confianzaInput = document.getElementById("confianzaDataset").value;
-            error = parseFloat(document.getElementById("errorDataset").value);
-            cv = (sigma / media) * 100;
-        } 
-        else if (modo === "subir") {
-            const fileInput = document.getElementById("archivoCSV");
-            const col = document.getElementById("columnaSubidaSelect").value;
-            const formData = new FormData();
-            formData.append("archivo", fileInput.files[0]);
-            formData.append("columna", col);
-
-            const res = await fetch("/estadisticos_subidos", { method: "POST", body: formData });
-            const data = await res.json();
-            sigma = data.sigma; media = data.media; mediana = data.mediana;
-            confianzaInput = document.getElementById("confianzaSubida").value;
-            error = parseFloat(document.getElementById("errorSubida").value);
-            cv = data.cv;
-        }
-
-        // 2. PROCESAMIENTO MATEMÁTICO
-        const valorConf = parseFloat(confianzaInput);
-        const z = calcularZ(valorConf);
-        n = Math.ceil((z * sigma / error) ** 2);
-
-        // 3. ACTUALIZAR INTERFAZ
-        document.getElementById("resN").textContent = n;
-        document.getElementById("resZ").textContent = z;
-        document.getElementById("resSigma").textContent = sigma.toFixed(4);
-        document.getElementById("resError").textContent = error;
-
-        // Mostrar/Ocultar Resumen Estadístico
-        const resumenDiv = document.getElementById("resumenEstadistico");
-        if (modo !== "propios") {
-            resumenDiv.style.display = "block";
-            document.getElementById("statMedia").textContent = media.toFixed(2);
-            document.getElementById("statMediana").textContent = mediana.toFixed(2);
-            document.getElementById("statSigma").textContent = sigma.toFixed(4);
-            document.getElementById("statCV").textContent = cv.toFixed(2);
-        } else {
-            resumenDiv.style.display = "none";
-        }
-
-        // 4. CONCLUSIÓN DINÁMICA
-        const conclusionCard = document.getElementById("cardConclusion");
-        conclusionCard.style.display = "block";
-        let mensaje = `Para una confianza del <strong>${valorConf}%</strong> y un error de <strong>${error}</strong>, se requiere una muestra de <strong>${n}</strong>.`;
-        if (cv) mensaje += ` El dataset presenta un Coeficiente de Variación de <strong>${cv.toFixed(2)}%</strong>.`;
-        document.getElementById("textoConclusion").innerHTML = mensaje;
-
-        // 5. GENERAR GRÁFICAS
-        generarGraficas(sigma, z, error, valorConf);
-
-    } catch (err) {
-        alert("Error: " + err.message);
+    if (typeof limpiarResultados === "function") {
+        limpiarResultados();
     }
+
+    // -------- 1. CAPTURA DE DATOS --------
+    const confianza = parseFloat(document.getElementById("confianzaProp").value);
+    const E = parseFloat(document.getElementById("errorProp").value);
+    const p = parseFloat(document.getElementById("pInput").value);
+    const usarCPF = document.getElementById("usarCPF").checked;
+    const N = parseFloat(document.getElementById("Nprop").value);
+    const q = 1 - p;
+
+    document.getElementById("qDisplay").value = q.toFixed(3);
+
+    // -------- 2. VALIDACIONES (MISMO ESTILO QUE MEDIAS) --------
+    // -------- LIMPIAR MENSAJES PREVIOS --------
+    limpiarError();
+
+    // -------- VALIDACIONES --------
+    if (isNaN(confianza) || confianza <= 0 || confianza >= 100) {
+        mostrarError("El nivel de confianza debe estar entre 0% y 100%.");
+        return;
+    }
+
+    if (isNaN(p) || p <= 0 || p >= 1) {
+        mostrarError("La proporción esperada p debe ser un número mayor que 0 y menor que 1.");
+        return;
+    }
+
+    if (isNaN(E) || E <= 0 || E >= 1) {
+        mostrarError("El margen de error E debe ser mayor que 0 y menor que 1.");
+        return;
+    }
+
+    // Corrección por población finita
+    if (document.getElementById("usarCPF").checked) {
+        const N = parseFloat(document.getElementById("Nprop").value);
+        if (isNaN(N) || N <= 0) {
+            mostrarError("Para aplicar la corrección por población finita, N debe ser mayor que 0.");
+            return;
+        }
+    }
+
+
+    // -------- 3. CÁLCULO --------
+    const Z = calcularZ(confianza);
+    const n0 = (Z ** 2 * p * q) / (E ** 2);
+
+    let n = n0;
+    if (usarCPF) {
+        n = n0 / (1 + (n0 - 1) / N);
+    }
+
+    const nFinal = Math.ceil(n);
+
+    // -------- 4. MOSTRAR RESULTADOS --------
+    document.getElementById("resN").textContent = nFinal;
+    document.getElementById("resZ").textContent = Z.toFixed(3);
+    document.getElementById("resSigma").textContent = p.toFixed(3);
+    document.getElementById("resError").textContent = E;
+
+    // -------- 5. INTERPRETACIÓN TÉCNICA (MISMA TARJETA) --------
+    limpiarError(); // importante
+    const card = document.getElementById("cardConclusion");
+    const texto = document.getElementById("textoConclusion");
+
+    card.style.display = "block";
+
+    const errorProp = Z * Math.sqrt((p * q) / nFinal);
+    const li = Math.max(0, p - errorProp);
+    const ls = Math.min(1, p + errorProp);
+
+    texto.innerHTML = `
+        <p>
+            Para un nivel de confianza del <strong>${confianza}%</strong> y
+            un margen de error máximo permitido de <strong>${E}</strong>,
+            se determinó un tamaño de muestra de <strong>${nFinal}</strong> unidades.
+        </p>
+
+        <p>
+            La proporción estimada es <strong>${(p * 100).toFixed(2)}%</strong>.
+        </p>
+
+        <p>
+            El intervalo de confianza es:
+            <strong>[${(li * 100).toFixed(2)}%, ${(ls * 100).toFixed(2)}%]</strong>
+        </p>
+
+        <p style="color:#27ae60;">
+            <strong>Conclusión:</strong>
+            La estimación es estadísticamente válida bajo muestreo aleatorio.
+        </p>
+    `;
+
+    // -------- 6. GRÁFICAS --------
+    dibujarGraficasProporcion(Z, p, q, E);
+
+    console.log("✔ Proporción calculada:", nFinal);
 }
 
-// --- FUNCIÓN DE GRÁFICAS ---
+/***********************************************************
+ * GRÁFICAS – PROPORCIONES
+ ***********************************************************/
+function dibujarGraficasProporcion(Z, p, q, E) {
 
-function generarGraficas(sigma, z, errorOriginal, confianzaOriginal) {
-    // Datos para Gráfica de Error (n vs E)
-    const errores = [errorOriginal * 0.5, errorOriginal * 0.8, errorOriginal, errorOriginal * 1.2, errorOriginal * 1.5];
-    const nPorError = errores.map(e => Math.ceil((z * sigma / e) ** 2));
+    if (window.chartError) {
+        window.chartError.destroy();
+        window.chartError = null;
+    }
+    if (window.chartConf) {
+        window.chartConf.destroy();
+        window.chartConf = null;
+    }
 
-    // Datos para Gráfica de Confianza (n vs Z)
-    const confianzas = [90, 95, 99];
-    const nPorConf = confianzas.map(c => Math.ceil((calcularZ(c) * sigma / errorOriginal) ** 2));
+    // Gráfica n vs Error
+    const errores = [];
+    const muestras = [];
 
-    // Configuración común de estilo
-    const chartOptions = { responsive: true, plugins: { legend: { display: false } } };
+    for (let e = E * 0.5; e <= E * 2; e += E / 5) {
+        errores.push(e.toFixed(3));
+        muestras.push(Math.ceil((Z ** 2 * p * q) / (e ** 2)));
+    }
 
-    // Destruir gráficas previas si existen
-    if (chartError) chartError.destroy();
-    if (chartConfianza) chartConfianza.destroy();
-
-    // Gráfica 1: Error
-    chartError = new Chart(document.getElementById('graficaError'), {
-        type: 'line',
+    const ctxError = document.getElementById("graficaError").getContext("2d");
+    window.chartError = new Chart(ctxError, {
+        type: "line",
         data: {
-            labels: errores.map(e => e.toFixed(2)),
-            datasets: [{ label: 'Muestra (n)', data: nPorError, borderColor: '#27ae60', backgroundColor: 'rgba(39, 174, 96, 0.1)', fill: true, tension: 0.4 }]
-        },
-        options: chartOptions
+            labels: errores,
+            datasets: [{
+                label: "Tamaño de muestra (n)",
+                data: muestras,
+                borderWidth: 3,
+                tension: 0.3
+            }]
+        }
     });
 
-    // Gráfica 2: Confianza
-    chartConfianza = new Chart(document.getElementById('graficaConfianza'), {
-        type: 'bar',
+    // Gráfica n vs Confianza
+    const niveles = [90, 95, 99];
+    const muestrasConf = niveles.map(c =>
+        Math.ceil((calcularZ(c) ** 2 * p * q) / (E ** 2))
+    );
+
+    const ctxConf = document.getElementById("graficaConfianza").getContext("2d");
+    window.chartConf = new Chart(ctxConf, {
+        type: "bar",
         data: {
-            labels: ['90%', '95%', '99%'],
-            datasets: [{ label: 'Muestra (n)', data: nPorConf, backgroundColor: ['#3498db', '#2c3e50', '#e67e22'] }]
-        },
-        options: chartOptions
+            labels: niveles.map(c => c + "%"),
+            datasets: [{
+                label: "Tamaño de muestra (n)",
+                data: muestrasConf
+            }]
+        }
     });
 }

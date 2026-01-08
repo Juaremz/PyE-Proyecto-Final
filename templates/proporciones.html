@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de Muestreo | Herramienta Estadística</title>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+    <style>
+        .header-section {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .header-section h1 {
+            margin: 0;
+            font-size: 2.2rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .header-section p {
+            margin-top: 10px;
+            opacity: 0.8;
+            font-weight: 300;
+        }
+        .formula-container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <div class="btn-group">
+        <a href="/" class="btn-calc">Medias</a>
+        <a href="/proporciones" class="btn-pdf">Proporciones</a>
+    </div>
+
+    <header class="header-section">
+        <h1>Inferencia Estadística</h1>
+        <p>Calculadora Avanzada de Tamaño de Muestra para Estimación de Proporciones</p>
+    </header>
+
+    <!-- MENSAJES DE ERROR -->
+    <div id="mensajeError" class="card"
+        style="display:none; border-left:6px solid #c0392b; background:#fdecea; color:#922b21;">
+    </div>
+
+
+    <div class="card">
+        <label for="tipoDatos">Configuración de Origen</label>
+        <select id="tipoDatos" onchange="cambiarModo()">
+            <option value="propios">Entrada Manual (Datos Conocidos)</option>
+            <option value="dataset">Biblioteca de Datasets Precargados</option>
+            <option value="subir">Carga de Archivo Externo (CSV)</option>
+        </select>
+    </div>
+
+    <div id="bloquePropios" class="card grid-inputs">
+        <div>
+            <label>Desviación Estándar (σ)</label>
+            <input type="number" id="stdInput" step="any" placeholder="Ej: 15.5">
+        </div>
+        <div>
+            <label>Confianza (%)</label>
+            <input type="number" id="confianzaPropios" list="opcionesConfianza" value="95">
+        </div>
+        <div>
+            <label>Error Permitido (E)</label>
+            <input type="number" id="errorPropios" step="any" placeholder="Ej: 2.0">
+        </div>
+    </div>
+
+    <div id="bloqueDataset" class="card" style="display:none;">
+        <div class="card grid-inputs">
+            <div>
+                <label>Nivel de Confianza (%)</label>
+                <input type="number" id="confianzaProp" value="95">
+            </div>
+
+            <div>
+                <label>Margen de Error (E)</label>
+                <input type="number" id="errorProp" step="any">
+            </div>
+
+            <div>
+                <label>Proporción esperada (p)</label>
+                <input type="number" id="pInput" step="any" value="0.5">
+            </div>
+
+            <div>
+                <label>q = 1 − p</label>
+                <input type="text" id="qDisplay" disabled>
+            </div>
+        </div>
+
+
+    <div id="bloqueSubir" class="card" style="display:none;">
+        <label>Seleccionar Archivo CSV</label>
+        <input type="file" id="archivoCSV" accept=".csv">
+        <button onclick="procesarArchivoSubido()" class="btn-calc" style="width: auto; padding: 5px 20px; margin-top: 10px;">Validar Archivo</button>
+        
+        <div class="grid-inputs" style="margin-top: 20px;">
+            <div>
+                <label>Columna a Analizar</label>
+                <select id="columnaSubidaSelect"></select>
+            </div>
+            <div>
+                <label>Confianza (%)</label>
+                <input type="number" id="confianzaSubida" list="opcionesConfianza" value="95">
+            </div>
+            <div>
+                <label>Error Permitido (E)</label>
+                <input type="number" id="errorSubida" step="any">
+            </div>
+
+            <div>
+                <label>
+                    <input type="checkbox" id="usarCPF" onchange="toggleCPF()">
+                    Aplicar corrección por población finita
+                </label>
+            </div>
+
+            <div id="bloqueCPF" style="display:none;">
+                <label>Tamaño de la población (N)</label>
+                <input type="number" id="Nprop" placeholder="Ej: 2500">
+            </div>
+
+        </div>
+    </div>
+
+    <datalist id="opcionesConfianza">
+        <option value="90">
+        <option value="95">
+        <option value="99">
+    </datalist>
+
+    <div class="btn-group">
+        <button class="btn-calc" onclick="calcularProporcion()">CALCULAR MUESTRA</button>
+    </div>
+
+
+    <div id="reporteContenedor">
+        
+        <div id="resumenEstadistico" class="card" style="display:none;">
+            <h3>Resumen Estadístico del Dataset</h3>
+            <div class="resumen-container">
+                <div class="stat-box">
+                    <span class="stat-value" id="statMedia">-</span>
+                    <label>Media (μ)</label>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-value" id="statMediana">-</span>
+                    <label>Mediana</label>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-value" id="statSigma">-</span>
+                    <label>Desv. Estándar (σ)</label>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-value"><span id="statCV">-</span>%</span>
+                    <label>Coef. Variación</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Resultado de la Inferencia</h3>
+
+            <div class="formula-container" style="text-align:center;">
+                $$ n = \frac{Z^2 \cdot p \cdot q}{E^2} $$
+            </div>
+
+            <div class="results-grid">
+                <div class="stat-box" style="background:#2c3e50; color:white;">
+                    <span class="stat-value" id="resNProp">-</span>
+                    <label>Muestra Necesaria (n)</label>
+                </div>
+
+                <div class="stat-box">
+                    <ul style="list-style:none; padding:0;">
+                        <li>Z: <span id="resZProp">-</span></li>
+                        <li>p: <span id="resPProp">-</span></li>
+                        <li>E: <span id="resEProp">-</span></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="cardConclusion" class="card" style="display:none; border-left: 6px solid #27ae60;">
+            <h3>Interpretación Técnica de la Muestra</h3>
+            <div id="textoConclusion"></div>
+        </div>
+
+        <div id="cardGrafica1" class="card">
+            <h4>Sensibilidad: Muestra vs Error</h4>
+            <canvas id="graficaError"></canvas>
+        </div>
+
+        <div id="cardGrafica2" class="card">
+            <h4>Impacto del Nivel de Confianza</h4>
+            <canvas id="graficaConfianza"></canvas>
+        </div>
+
+    </div> <div class="card" style="background: #f8f9fa; border: 1px solid #dee2e6; margin-top: 20px;">
+        <h4>Glosario de Parámetros Técnicos</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size: 0.85rem; color: #444;">
+            <div>
+                <strong>Z (Valor Crítico):</strong> Determina qué tan seguro estás de que la muestra representa a la población. Se deriva del nivel de confianza.
+            </div>
+            <div>
+                <strong>σ (Desviación Estándar):</strong> Indica la variabilidad o dispersión de los datos. A mayor variabilidad, mayor muestra requerida.
+            </div>
+            <div>
+                <strong>E (Margen de Error):</strong> La precisión deseada. Es la diferencia máxima aceptable entre el resultado muestral y el poblacional.
+            </div>
+            <div>
+                <strong>CV (Coeficiente de Variación):</strong> Medida de dispersión relativa que ayuda a entender qué tan heterogéneos son los datos analizados.
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='graficas.js') }}"></script>
+<script src="{{ url_for('static', filename='graficas_proporcion.js') }}"></script>
+
+
+</body>
+</html>
